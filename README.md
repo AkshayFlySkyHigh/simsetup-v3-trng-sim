@@ -1,11 +1,20 @@
 # simsetup_v3: simulated switching statistics and NIST tests
 
-This repository holds the analysis code, extracted bitstreams, result tables and NIST SP 800-22 test outputs for the IL2231 course paper on simsetup_v3, a GPU-based micromagnetic simulation workflow for a stochastically switching magnetic tunnel junction. Each simulation run applies one current pulse to the free layer and records whether the magnetization switched. The bitstreams below are built from these simulated outcomes. They are simulation data and not output from a hardware random number generator.
+This repository holds the simulation and analysis code, extracted bitstreams, result tables and NIST SP 800-22 test outputs for the IL2231 course paper on simsetup_v3, a GPU-based micromagnetic simulation workflow for a stochastically switching magnetic tunnel junction. Each simulation run applies one current pulse to the free layer and records whether the magnetization switched. The bitstreams below are built from these simulated outcomes. They are simulation data and not output from a hardware random number generator.
 
 ## Contents
 
 | Path | Content |
 |---|---|
+| `simsetup_v3/runner_scheduled.py` | Main runner: reads `params.csv`, schedules one MuMax3 run per seed across the configured GPUs, classifies each run and appends to `results/run_summary.csv`. |
+| `simsetup_v3/params.csv` | Parameter sets to run (pulse width, temperature, current, seed range). |
+| `simsetup_v3/modules/config.py` | Machine and protocol settings: MuMax3 path, GPU IDs, threshold, early-stop criteria, output paths. Edit before running. |
+| `simsetup_v3/modules/template.mx3` | MuMax3 input template for the free layer; placeholders are filled per run. |
+| `simsetup_v3/modules/iter_run.py` | Runs one simulation (one seed), extracts the m_z table and writes per-run metadata. |
+| `simsetup_v3/modules/autoplot.py`, `simsetup_v3/modules/utils.py` | Automatic summary plot and terminal formatting helpers. |
+| `simsetup_v3/build_results_summary.py`, `simsetup_v3/build_invalid_list.py` | Summarise switching counts per parameter set and list invalid runs. |
+| `simsetup_v3/test_iter.py` | Single-run smoke test. |
+| `simsetup_v3/tools/` | Post-processing utilities: metadata checks, invalid-run cleanup, magnetization trace plots, switching-time analysis, OVF snapshot conversion, single-run tool, and the NIST input builder/checker used to cut a bitstream into NIST input files. |
 | `analysis/paper_config.py` | Paths and settings shared by the analysis scripts (results folder, switching threshold \|m_z\| = 0.8, pulse start time). |
 | `analysis/Paper_plotter.py` | Reads the per-seed magnetization tables and metadata, classifies each run as switched, not switched or invalid, and draws the trace, overlay and bitstream figures. |
 | `analysis/sweep_plots.py` | Coarse and fine pulse-width sweeps and the temperature sweep; also writes `plots/sweep_summary.csv`. |
@@ -24,10 +33,10 @@ This repository holds the analysis code, extracted bitstreams, result tables and
 
 ## Reproducing the results
 
-Requirements: Python 3.10 or newer with `numpy`, `pandas` and `matplotlib`.
+Requirements: Python 3.10 or newer with `numpy`, `pandas` and `matplotlib`; MuMax3 3.10 with a CUDA GPU for the simulations.
 
-1. Run simsetup_v3 (or obtain its results folder). The analysis expects `results/tables/<pulse>ns_<T>K_<I>mA/seedNNNN_<hash>.txt` and the matching `results/metadata/` JSON files.
-2. Point the scripts at that folder with the environment variable `SIMSETUP_RESULTS`. The coarse sweep and the reversed-polarity runs were stored in separate result folders; set `SIMSETUP_COARSE_RESULTS` and `SIMSETUP_POLARITY_RESULTS` for them.
+1. Edit `simsetup_v3/modules/config.py` (MuMax3 path, GPU IDs) and `simsetup_v3/params.csv`, then run `python runner_scheduled.py` from `simsetup_v3/`. Results are written to `simsetup_v3/results/`. The analysis expects `results/tables/<pulse>ns_<T>K_<I>mA/seedNNNN_<hash>.txt` and the matching `results/metadata/` JSON files.
+2. The analysis scripts read `simsetup_v3/results/` by default; set the environment variable `SIMSETUP_RESULTS` to use another folder. The coarse sweep and the reversed-polarity runs were stored in separate result folders; set `SIMSETUP_COARSE_RESULTS` and `SIMSETUP_POLARITY_RESULTS` for them.
 3. From `analysis/`, run `python Paper_plotter.py`, `python sweep_plots.py`, `python polarity_plots.py` and `python repro_plots.py`. Figures are written to `analysis/plots/`.
 4. Run `python export_bitstream.py` to regenerate the bitstream in `data/`.
 

@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+simsetup_v3/results/
+analysis/plots/

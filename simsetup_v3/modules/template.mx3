@@ -1,0 +1,54 @@
+SetGridsize(32, 32, 1)
+
+// free layer parameters
+Ku1 = 390234
+SetCellsize(2*0.625e-9, 2*0.625e-9, 2.6e-9)
+anisU = vector(0, 0, 1)
+setGeom(ellipse(3.000000e-08, 3.000000e-08))
+Msat = 580769
+Aex = 4.2e-12
+alpha = 0.016
+m = uniform(2.931806e-01, 0.0, 9.560571e-01)
+
+// spacer layer parameters
+lambda = 1
+Pol = 1
+epsilonprime = 0
+
+// fixed layer polarization
+fixedlayer = vector(0, 0, 1)
+
+// Solver setup
+SetSolver(5) // RK34
+MinDt = 1e-15
+
+relax()
+//save(m)
+
+temp = {TEMP}
+ThermSeed({SEED})
+
+// pulse parameters
+Jtot := {CURRENT} // total current in A
+area := 2e-8 * 2e-8 * pi / 4
+jc := Jtot / area // current density in A/m2
+graphwindow := {TOT_TIME}e-9
+prePulseDuration := 1e-9
+pulseDuration := {PULSE}e-9
+postPulseDuration := graphwindow - (pulseDuration + prePulseDuration)
+
+// save to table
+tableAdd(m)
+tableautosave(10e-12)
+
+// pulse off
+J = vector(0, 0, 0)
+run(prePulseDuration)
+
+// pulse on
+J = vector(0, 0, jc)
+run(pulseDuration)
+
+// pulse off
+J = vector(0, 0, 0)
+run(postPulseDuration)

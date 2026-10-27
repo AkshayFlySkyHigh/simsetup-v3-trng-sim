@@ -1,0 +1,4 @@
+pulse_ns,temperature_K,current_A,start_seed,end_seed,seed_step
+0.2088,301,-0.0001,1,2500,1
+0.2088,302,-0.0001,1,2500,1
+0.2088,300,-0.0001,20001,22000,1
